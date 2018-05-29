@@ -1,0 +1,258 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+	<title>reveal.js</title>
+
+	<link rel="stylesheet" href="node_modules/reveal.js/css/reveal.css">
+	<link rel="stylesheet" href="node_modules/reveal.js/css/theme/black.css">
+
+	<!-- Theme used for syntax highlighting of code -->
+	<link rel="stylesheet" href="node_modules/reveal.js/lib/css/zenburn.css">
+
+	<!-- Printing and PDF exports -->
+	<script>
+		var link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.type = 'text/css';
+		link.href = window.location.search.match(/print-pdf/gi) ? 'node_modules/reveal.js/css/print/pdf.css' : 'node_modules/reveal.js/css/print/paper.css';
+		document.getElementsByTagName('head')[0].appendChild(link);
+	</script>
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h3>Agenda</h3>
+				<ul>
+					<li>
+						Theoratical part
+						<ul>
+							<li>Reactive Programming</li>
+							<li>Streams</li>
+							<li>Most used Operators</li>
+							<li>Dos and dont's</li>
+						</ul>
+					</li>
+					<li>Example</li>
+				</ul>
+
+			</section>
+			<section data-markdown>
+				<textarea data-template>
+					# RXJS
+					The Reactive Extensions for JavaScript
+				</textarea>
+			</section>
+			<section>
+				<p>What the hell is a Reactive Extension?</p>
+				<iframe src="https://giphy.com/embed/LyJ6KPlrFdKnK" width="200" height="200" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+			</section>
+			<section data-markdown="">
+				<textarea data-template="">
+					* Event handling and promises on steroids
+					* Helps you to programm with asynchronous data streams
+					* Create streams out of everything
+					* Amazing toolbox of functions to combine, filter and create streams
+				</textarea>
+			</section>
+			<section data-markdown="">
+				<textarea data-template="">
+					## What is a stream?
+					* its a sequence of ongoing events ordered in time
+					* events can only be captured asynchronously
+				</textarea>
+			</section>
+			<section data-markdown>
+				<textarea data-template>
+							Example
+							```
+import { fromEvent as fromEventObserable } from "rxjs";
+import {
+	throttle,
+	buffer,
+	throttleTime,
+	debounceTime,
+	filter,
+	tap
+} from "rxjs/operators";
+
+const keypressObs = fromEventObserable(document, "keypress");
+
+keypressObs
+	.pipe(
+	buffer(keypressObs.pipe(debounceTime(250))),
+	filter(keyEvents => keyEvents.length === 2)
+	)
+	.subscribe(events => {
+	console.log("Key pressed twice", events);
+	});
+			
+							``` 
+				</textarea>
+
+			</section>
+			<section>
+				<iframe src="https://giphy.com/embed/1M9fmo1WAFVK0" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+			</section>
+			<section>
+				<section>
+					<h2>Most used operators</h2>
+				</section>
+				<section>
+					<h3>Subscribe</h3>
+					<small>operate upon the emissions and notifications from an Observable</small>
+					<p>Your door to the outside world</p>
+				</section>
+				<section>
+					<h3>Map</h3>
+					<small>transform the items emitted by an Observable by applying a function to each item</small>
+					<p>Manipulate values</p>
+					<pre>
+						<code>
+[...]
+const coordinates$ = clickEvents$
+	.map(event => { x: event.clientX, y: event.clientY });
+// Will return {x: 10, y: 20}
+						</code>
+					</pre>
+
+				</section>
+				<section>
+					<h3>Filter</h3>
+					<small>emit only those items from an Observable that pass a predicate test</small>
+					<p>Same like array.filter for observables</p>
+					<pre><code>
+const searchTerm$ = inputValue$
+	.filter(inputValue => inputValue.length > 2);
+					</code></pre>
+				</section>
+				<section>
+					<h3>debounceTime</h3>
+					<small>only emit an item from an Observable if a particular timespan has passed without it emitting another item</small>
+					<pre>
+						<code>const debouncedSearchTerm$ = searchTerm$.debounceTime(200);</code>
+					</pre>
+				</section>
+				<section>
+					<h3>merge</h3>
+					<pre><code>
+const changeSongClick$ = Rx.Observable
+	.merge(previousSongClick$, nextSongClick$);
+					</code></pre>
+				</section>
+				<section>
+					<h3>combineLatest</h3>
+					<p>its useful when you have multiple Observables whose values only make sense when used together</p>
+					<pre><code>
+const profile$ = Rx.Observable.combineLatest(
+		userData$,
+		articles$,
+		comments$,
+		([userData, articles, comments] => ({ userData, articles, comments }))
+		);
+							</code></pre>
+				</section>
+				<section>
+					<h3>And more</h3>
+					<ul>
+						<li>switchMap</li>
+						<li>flatMap</li>
+						<li>zip</li>
+						<li>skipUntil</li>
+						<li>
+							<a href="http://reactivex.io/documentation/operators.html">...</a>
+						</li>
+					</ul>
+				</section>
+			</section>
+
+			<section>
+				<section>
+					<h2>Do's and dont's</h2>
+				</section>
+				<section>
+					<h3>Use pipable operators / pure functions</h3>
+					<ul>
+						<li>It does not mutate anything</li>
+						<li>Has always the same result on same input</li>
+						<li>It doesn't have any side effects</li>
+					</ul>
+				</section>
+				<section>
+					<h3>Avoid memory leaks</h3>
+					<ul>
+						<li>Unsubscribe your subscriptions</li>
+						<li>Or better: subsribe condionally (takewhile, takeUntil)</li>
+					</ul>
+					<pre>
+						<code>
+const interval$ = interval(1000);
+// This is a classic example of a memory-leak
+const subscription = interval$.subscribe(r => console.log(r));
+						</code>
+					</pre>
+				</section>
+				<section>
+					<h3>Avoid nested subsribers</h3>
+					<ul>
+						<li>Not reactive</li>
+						<li>Can have side effects</li>
+						<li>Looks ugly :(</li>
+					</ul>
+					<pre>
+						<code>
+// DONT!!!
+// Classic angular component
+this.route.params
+.pipe(map(v => v.id))
+.subscribe(id => 
+	this.userService.fetchById(id)
+		.subscribe(user => this.user = user))
+						</code>
+					</pre>
+				</section>
+				<section>
+					<h3>Avoid nested subsribers</h3>
+					<pre>
+							<code>
+// DO
+this.route.params
+.pipe(
+	map(v => v.id),
+	switchMap(id => this.userService.fetchById(id))
+)
+.subscribe(user => this.user = user)
+							</code>
+						</pre>
+				</section>
+			</section>
+			<section>
+				Thank you
+			</section>
+		</div>
+	</div>
+
+	<script src="node_modules/reveal.js/lib/js/head.min.js"></script>
+	<script src="node_modules/reveal.js/js/reveal.js"></script>
+
+	<script>
+		// More info about config & dependencies:
+		// - https://github.com/hakimel/reveal.js#configuration
+		// - https://github.com/hakimel/reveal.js#dependencies
+		Reveal.initialize({
+			dependencies: [
+				{ src: 'node_modules/reveal.js/plugin/markdown/marked.js' },
+				{ src: 'node_modules/reveal.js/plugin/markdown/markdown.js' },
+				{ src: 'node_modules/reveal.js/plugin/notes/notes.js', async: true },
+				{ src: 'node_modules/reveal.js/plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } }
+			]
+		});
+	</script>
+</body>
+
+</html>
